@@ -24,13 +24,26 @@ The tray is part of the **desktop app**, not `orcad` alone: if Orca Coder is not
 
 ## Install
 
-One-command installer (recommended target flow):
+One-command installer (recommended):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OrcaLabsAI/orca/main/scripts/install-orca.sh | bash
+curl -fsSL https://raw.githubusercontent.com/austindixson/orca-agent/main/scripts/install-orca.sh | bash
 ```
 
-The installer builds `orca` + `orcad`, installs them to `~/.local/bin`, and then prompts:
+The installer now supports both infrastructure paths:
+
+1) Prebuilt binaries (fast)
+2) Source build (full local compile)
+3) Auto fallback (try prebuilt, then source)
+
+Default behavior is interactive choice. You can force mode with env:
+
+```bash
+ORCA_INSTALL_MODE=binary   # binary|source|auto|prompt
+ORCA_VERSION=latest        # or v0.1.0
+```
+
+After install it prompts:
 
 `Would you like to begin setup now? [Y/n]`
 
@@ -39,17 +52,16 @@ If you press Enter/Y, it immediately launches `orca setup`.
 Manual install (dev/local):
 
 ```bash
-cargo build -p orca-cli -p orca-daemon --release
+cargo build -p orca-cli --release
+# If daemon crate exists in your checkout, optionally also:
+# cargo build -p orca-daemon --release
+
 # Put target/release on PATH, or:
 export PATH="$PWD/target/release:$PATH"
-
-npm run build --workspace=packages/harness-headless
 
 orca setup
 # or non-interactive merge from env:
 #   PORT=3001 WORKSPACE_ROOT=$PWD OPENROUTER_API_KEY=*** orca setup --defaults
-# then:
-orca install
 ```
 
 **`orca setup`** is an interactive wizard (similar to [Hermes `hermes setup`](https://github.com/NousResearch/hermes-agent)): port, workspace, bridge token, OpenRouter / OpenAI-compatible API key and model, optional harness paths, optional Telegram bot token (stored in the OS keyring). It can optionally run **`orca install`** and **`orca start`** at the end.
