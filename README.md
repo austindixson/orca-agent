@@ -48,6 +48,8 @@ Interactive setup also includes a Z.AI endpoint picker:
 - Coding Plan endpoint: `https://api.z.ai/api/coding/paas/v4`
 - Standard endpoint: `https://api.z.ai/api/paas/v4`
 
+After you enter an API key, setup now attempts to auto-detect models from that provider and presents a selectable model list (with manual fallback).
+
 Daily commands:
 
 ```bash

@@ -1,9 +1,10 @@
 //! Interactive `orca setup` wizard (Hermes-style).
 
-use std::path::PathBuf;
+use std::{collections::BTreeSet, path::PathBuf, time::Duration};
 
 use anyhow::Context;
 use dialoguer::{theme::ColorfulTheme, Confirm, Input, Password, Select};
+use serde_json::Value;
 
 use crate::config::{
     bridge_token_store_keyring, telegram_token_from_keyring, telegram_token_store_keyring,
@@ -266,6 +267,124 @@ fn choose_zai_endpoint(theme: &ColorfulTheme, current: Option<&str>) -> anyhow::
     })
 }
 
+fn models_endpoint(base_url: &str) -> String {
+    let trimmed = base_url.trim().trim_end_matches('/');
+    if trimmed.ends_with("/models") {
+        return trimmed.to_string();
+    }
+    format!("{trimmed}/models")
+}
+
+fn extract_model_names(payload: &Value) -> Vec<String> {
+    let mut out = BTreeSet::new();
+
+    let push_obj = |obj: &serde_json::Map<String, Value>, out: &mut BTreeSet<String>| {
+        if let Some(id) = obj.get("id").and_then(Value::as_str) {
+            let t = id.trim();
+            if !t.is_empty() {
+                out.insert(t.to_string());
+            }
+        }
+        if let Some(name) = obj.get("name").and_then(Value::as_str) {
+            let t = name.trim();
+            if !t.is_empty() {
+                out.insert(t.to_string());
+            }
+        }
+        if let Some(model) = obj.get("model").and_then(Value::as_str) {
+            let t = model.trim();
+            if !t.is_empty() {
+                out.insert(t.to_string());
+            }
+        }
+    };
+
+    if let Some(arr) = payload.get("data").and_then(Value::as_array) {
+        for item in arr {
+            if let Some(obj) = item.as_object() {
+                push_obj(obj, &mut out);
+            }
+        }
+    }
+
+    if let Some(arr) = payload.get("models").and_then(Value::as_array) {
+        for item in arr {
+            if let Some(obj) = item.as_object() {
+                push_obj(obj, &mut out);
+            }
+        }
+    }
+
+    out.into_iter().collect()
+}
+
+fn detect_models(
+    provider: ProviderPreset,
+    base_url: &str,
+    api_key: &str,
+) -> anyhow::Result<Vec<String>> {
+    let endpoint = models_endpoint(base_url);
+    let client = reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(12))
+        .build()?;
+
+    let mut req = client.get(&endpoint);
+    if !api_key.trim().is_empty() {
+        req = req.bearer_auth(api_key.trim());
+    }
+
+    if matches!(provider, ProviderPreset::Anthropic) {
+        req = req.header("x-api-key", api_key.trim());
+        req = req.header("anthropic-version", "2023-06-01");
+    }
+
+    let resp = req.send()?;
+    if !resp.status().is_success() {
+        anyhow::bail!("{} {}", resp.status(), endpoint);
+    }
+
+    let payload: Value = resp.json()?;
+    Ok(extract_model_names(&payload))
+}
+
+fn prompt_for_model(
+    theme: &ColorfulTheme,
+    default_model: String,
+    detected_models: Vec<String>,
+) -> anyhow::Result<String> {
+    if detected_models.is_empty() {
+        let value: String = Input::with_theme(theme)
+            .with_prompt("Model id")
+            .default(default_model)
+            .interact_text()?;
+        return Ok(value.trim().to_string());
+    }
+
+    let mut items = detected_models;
+    if !items.iter().any(|m| m == &default_model) {
+        items.insert(0, default_model.clone());
+    }
+    items.push("<Enter model id manually>".to_string());
+
+    let default_idx = items.iter().position(|m| m == &default_model).unwrap_or(0);
+
+    let idx = Select::with_theme(theme)
+        .with_prompt("Detected models (choose one)")
+        .items(&items)
+        .default(default_idx)
+        .interact()?;
+
+    if idx == items.len() - 1 {
+        let value: String = Input::with_theme(theme)
+            .with_prompt("Model id")
+            .default(default_model)
+            .interact_text()?;
+        return Ok(value.trim().to_string());
+    }
+
+    Ok(items[idx].clone())
+}
+
 fn setup_provider_and_model(theme: &ColorfulTheme, cfg: &mut OrcaConfig) -> anyhow::Result<()> {
     let provider = choose_provider(theme)?;
 
@@ -309,15 +428,42 @@ fn setup_provider_and_model(theme: &ColorfulTheme, cfg: &mut OrcaConfig) -> anyh
         cfg.llm.base_url = Some(base_url.trim().to_string());
     }
 
-    let model: String = Input::with_theme(theme)
-        .with_prompt("Model id")
-        .default(
-            cfg.llm
-                .model
-                .clone()
-                .unwrap_or_else(|| provider.default_model().to_string()),
-        )
-        .interact_text()?;
+    let default_model = cfg
+        .llm
+        .model
+        .clone()
+        .unwrap_or_else(|| provider.default_model().to_string());
+
+    let effective_key = cfg.llm.api_key.clone().unwrap_or_default();
+    let detected_models = if effective_key.trim().is_empty() {
+        Vec::new()
+    } else {
+        println!("Detecting models for {}...", provider.label());
+        match detect_models(
+            provider,
+            cfg.llm.base_url.as_deref().unwrap_or(""),
+            &effective_key,
+        ) {
+            Ok(models) => {
+                if models.is_empty() {
+                    println!(
+                        "No models were returned by this endpoint/key. You can enter one manually."
+                    );
+                } else {
+                    println!("Detected {} model(s).", models.len());
+                }
+                models
+            }
+            Err(err) => {
+                println!(
+                    "Could not auto-detect models ({err}). You can still enter model id manually."
+                );
+                Vec::new()
+            }
+        }
+    };
+
+    let model = prompt_for_model(theme, default_model, detected_models)?;
 
     if !model.trim().is_empty() {
         cfg.llm.model = Some(model.trim().to_string());

@@ -93,7 +93,7 @@ orca setup
 #   PORT=3001 WORKSPACE_ROOT=$PWD ZAI_API_KEY=*** ORCA_LLM_BASE_URL=https://api.z.ai/api/coding/paas/v4 ORCA_MODEL=GLM-4.7 orca setup --defaults
 ```
 
-**`orca setup`** is an interactive wizard (similar to [Hermes `hermes setup`](https://github.com/NousResearch/hermes-agent)): port, workspace, bridge token, provider/model setup (OpenRouter, OpenAI, Anthropic, xAI, Z.AI GLM, Mistral, GitHub Copilot, Google Vertex, Azure OpenAI, Ollama, Hermes Gateway, or custom OpenAI-compatible), optional harness paths, and optional Telegram bot token (stored in the OS keyring). For Z.AI it now asks you to choose endpoint type directly: **Coding Plan** (`https://api.z.ai/api/coding/paas/v4`) or **Standard** (`https://api.z.ai/api/paas/v4`). It can optionally run **`orca install`** and **`orca start`** at the end.
+**`orca setup`** is an interactive wizard (similar to [Hermes `hermes setup`](https://github.com/NousResearch/hermes-agent)): port, workspace, bridge token, provider/model setup (OpenRouter, OpenAI, Anthropic, xAI, Z.AI GLM, Mistral, GitHub Copilot, Google Vertex, Azure OpenAI, Ollama, Hermes Gateway, or custom OpenAI-compatible), optional harness paths, and optional Telegram bot token (stored in the OS keyring). For Z.AI it now asks you to choose endpoint type directly: **Coding Plan** (`https://api.z.ai/api/coding/paas/v4`) or **Standard** (`https://api.z.ai/api/paas/v4`). After API key entry, setup attempts to detect available models from that provider and lets you pick one (with manual fallback). It can optionally run **`orca install`** and **`orca start`** at the end.
 
 `orca install` generates a **bridge token** if missing, stores it in the OS keyring and `~/.orca/config.toml`, and registers the platform daemon.
 
