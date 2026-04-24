@@ -40,6 +40,44 @@ Run setup wizard:
 cargo run -p orca-cli -- setup
 ```
 
+## Windows install (robust path)
+
+The one-line `curl | bash` installer is for macOS/Linux shells.
+
+On Windows, use one of these:
+
+1) Native PowerShell (recommended)
+- Download latest release ZIP from:
+  - https://github.com/austindixson/orca-agent/releases/latest
+  - Asset: `orca-agent-windows-x86_64.zip`
+- Extract to a stable folder, e.g.:
+  - `%LOCALAPPDATA%\Programs\orca-agent\`
+- Add that folder to your User PATH.
+- Open a new PowerShell and verify:
+
+```powershell
+orca --help
+```
+
+- Run setup:
+
+```powershell
+orca setup
+```
+
+2) WSL path
+- In WSL, run the standard installer:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/austindixson/orca-agent/main/scripts/install-orca.sh | bash
+```
+
+- Then run `orca setup` in WSL.
+
+Windows notes:
+- Daemon registration uses Task Scheduler (`orca install` creates a user logon task).
+- Logs are at `%LOCALAPPDATA%\Orca\Logs\orcad.log`.
+
 ## Release assets
 
 When you push a tag like `v0.1.0`, GitHub Actions builds release archives:
@@ -48,4 +86,4 @@ When you push a tag like `v0.1.0`, GitHub Actions builds release archives:
 - `orca-agent-darwin-aarch64.tar.gz`
 - `orca-agent-windows-x86_64.zip`
 
-The installer can download these directly in binary mode.
+The installer can download these directly in binary mode (macOS/Linux), and Windows users can install from the ZIP release asset.

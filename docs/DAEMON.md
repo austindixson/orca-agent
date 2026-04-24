@@ -24,11 +24,28 @@ The tray is part of the **desktop app**, not `orcad` alone: if Orca Coder is not
 
 ## Install
 
-One-command installer (recommended):
+One-command installer (recommended on macOS/Linux):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/austindixson/orca-agent/main/scripts/install-orca.sh | bash
 ```
+
+Windows install (recommended):
+
+1) Download latest release ZIP:
+- https://github.com/austindixson/orca-agent/releases/latest
+- asset: `orca-agent-windows-x86_64.zip`
+
+2) Extract to e.g. `%LOCALAPPDATA%\Programs\orca-agent\`
+
+3) Add that folder to User PATH, open new PowerShell, verify:
+
+```powershell
+orca --help
+orca setup
+```
+
+(Alternative: use WSL and run the same `curl | bash` installer there.)
 
 The installer now supports both infrastructure paths:
 
