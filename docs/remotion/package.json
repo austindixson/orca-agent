@@ -1,0 +1,20 @@
+{
+  "name": "orca-agent-readme-visuals",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "compositions": "remotion compositions src/index.tsx",
+    "render:install": "remotion still src/index.tsx InstallFlow ../assets/install-flow.png --frame=60",
+    "render:setup": "remotion still src/index.tsx SetupFlow ../assets/setup-flow.png --frame=60",
+    "render:all": "npm run render:install && npm run render:setup"
+  },
+  "dependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.366"
+  },
+  "devDependencies": {
+    "@remotion/cli": "4.0.366"
+  }
+}

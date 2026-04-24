@@ -66,6 +66,18 @@ After install it prompts:
 
 If you press Enter/Y, it immediately launches `orca setup`.
 
+Helpful examples:
+
+```bash
+# Z.AI GLM defaults on a port > 9000
+PORT=9001 ZAI_API_KEY='your_key' ORCA_LLM_BASE_URL='https://api.z.ai/api/coding/paas/v4' ORCA_MODEL='GLM-4.7' orca setup --defaults
+
+# Open terminal UI + run quick health checks
+orca
+orca status
+orca doctor
+```
+
 Manual install (dev/local):
 
 ```bash

@@ -2,6 +2,12 @@
 
 Standalone Orca terminal agent repository (CLI/TUI).
 
+## Visual quickstart
+
+![Orca CLI install flow](docs/assets/install-flow.png)
+
+![Orca CLI GLM setup flow](docs/assets/setup-flow.png)
+
 Included:
 - `crates/orca-cli` (`orca` binary)
 - `scripts/install-orca.sh` (dual-mode installer: prebuilt or source)
@@ -24,6 +30,28 @@ Installer modes:
 ORCA_INSTALL_MODE=binary  # binary|source|auto|prompt
 ORCA_VERSION=latest       # or v0.1.0
 ORCA_GITHUB_REPO=austindixson/orca-agent
+```
+
+## Helpful command examples
+
+Quick setup with Z.AI GLM defaults:
+
+```bash
+PORT=9001 \
+ZAI_API_KEY='your_key_here' \
+ORCA_LLM_BASE_URL='https://api.z.ai/api/coding/paas/v4' \
+ORCA_MODEL='GLM-4.7' \
+orca setup --defaults
+```
+
+Daily commands:
+
+```bash
+orca            # open full-screen TUI chat
+orca status     # daemon / bridge / gateway health
+orca doctor     # config + runtime checks
+orca chat "summarize latest changes"
+orca logs
 ```
 
 ## Local development
@@ -87,3 +115,18 @@ When you push a tag like `v0.1.0`, GitHub Actions builds release archives:
 - `orca-agent-windows-x86_64.zip`
 
 The installer can download these directly in binary mode (macOS/Linux), and Windows users can install from the ZIP release asset.
+
+## Regenerate README visuals (Remotion)
+
+The images in `docs/assets/*.png` are generated via Remotion from `docs/remotion`.
+
+```bash
+cd docs/remotion
+npm install
+npm run compositions
+npm run render:all
+```
+
+This updates:
+- `docs/assets/install-flow.png`
+- `docs/assets/setup-flow.png`
