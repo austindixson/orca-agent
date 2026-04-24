@@ -260,6 +260,7 @@ fn setup_telegram(theme: &ColorfulTheme) -> anyhow::Result<()> {
 pub fn cmd_setup_interactive(
     cmd_install: impl FnOnce() -> anyhow::Result<()>,
     cmd_start: impl FnOnce() -> anyhow::Result<()>,
+    daemon_available: bool,
 ) -> anyhow::Result<()> {
     let theme = ColorfulTheme::default();
     println!("Orca setup wizard\n");
@@ -365,20 +366,27 @@ pub fn cmd_setup_interactive(
     println!("\nWrote {}", OrcaConfig::path()?.display());
 
     if !matches!(mode, SetupMode::TelegramOnly) {
-        if Confirm::with_theme(&theme)
-            .with_prompt("Run `orca install` (daemon registration) now?")
-            .default(true)
-            .interact()?
-        {
-            cmd_install()?;
-        }
+        if daemon_available {
+            if Confirm::with_theme(&theme)
+                .with_prompt("Run `orca install` (daemon registration) now?")
+                .default(true)
+                .interact()?
+            {
+                cmd_install()?;
+            }
 
-        if Confirm::with_theme(&theme)
-            .with_prompt("Start daemon now?")
-            .default(true)
-            .interact()?
-        {
-            cmd_start()?;
+            if Confirm::with_theme(&theme)
+                .with_prompt("Start daemon now?")
+                .default(true)
+                .interact()?
+            {
+                cmd_start()?;
+            }
+        } else {
+            println!("\nDaemon binary not found (`orcad`). Skipping daemon install/start prompts.");
+            println!(
+                "Install orcad later, then run `orca install` (or set ORCAD_PATH to your orcad binary)."
+            );
         }
     }
 

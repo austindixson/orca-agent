@@ -16,8 +16,8 @@ use serde_json::{json, Value};
 use crate::config::{
     bridge_token_from_keyring, bridge_token_store_keyring, telegram_token_from_keyring, OrcaConfig,
 };
-use crate::setup::{cmd_setup_defaults, cmd_setup_interactive};
 use crate::http_client::{get_json, post_json};
+use crate::setup::{cmd_setup_defaults, cmd_setup_interactive};
 
 #[derive(Parser)]
 #[command(name = "orca", about = "Orca Coder — daemon & bridge CLI")]
@@ -51,9 +51,7 @@ enum Commands {
         follow: bool,
     },
     /// Send a message through the harness (POST /api/harness/chat)
-    Chat {
-        text: String,
-    },
+    Chat { text: String },
     /// POST /api/canvas/execute (Hermes-style)
     Exec {
         tool: String,
@@ -127,7 +125,8 @@ async fn main() -> anyhow::Result<()> {
             if defaults {
                 cmd_setup_defaults()?;
             } else {
-                cmd_setup_interactive(cmd_install, cmd_start)?;
+                let daemon_available = installer::resolve_orcad().is_ok();
+                cmd_setup_interactive(cmd_install, cmd_start, daemon_available)?;
             }
         }
         Commands::Tui => tui::run_tui().await?,
@@ -371,7 +370,10 @@ fn cmd_logs(follow: bool) -> anyhow::Result<()> {
 async fn cmd_chat(text: String) -> anyhow::Result<()> {
     let cfg = merge_token(OrcaConfig::load()?);
     let (st, body) = post_json(&cfg, "/api/harness/chat", json!({ "text": text })).await?;
-    println!("{}", serde_json::to_string_pretty(&json!({ "status": st, "body": body }))?);
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json!({ "status": st, "body": body }))?
+    );
     Ok(())
 }
 
@@ -388,7 +390,10 @@ async fn cmd_exec(tool: String, args: Option<String>) -> anyhow::Result<()> {
         json!({ "tool": tool, "arguments": arguments }),
     )
     .await?;
-    println!("{}", serde_json::to_string_pretty(&json!({ "status": st, "body": body }))?);
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json!({ "status": st, "body": body }))?
+    );
     Ok(())
 }
 
@@ -419,7 +424,10 @@ async fn cmd_reply(
         body["session_id"] = json!(sid);
     }
     let (st, b) = post_json(&cfg, "/api/orchestrator/reply", body).await?;
-    println!("{}", serde_json::to_string_pretty(&json!({ "status": st, "body": b }))?);
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json!({ "status": st, "body": b }))?
+    );
     Ok(())
 }
 
