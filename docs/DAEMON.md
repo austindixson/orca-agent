@@ -61,10 +61,10 @@ export PATH="$PWD/target/release:$PATH"
 
 orca setup
 # or non-interactive merge from env:
-#   PORT=3001 WORKSPACE_ROOT=$PWD OPENROUTER_API_KEY=*** orca setup --defaults
+#   PORT=3001 WORKSPACE_ROOT=$PWD ZAI_API_KEY=*** ORCA_LLM_BASE_URL=https://api.z.ai/api/coding/paas/v4 ORCA_MODEL=GLM-4.7 orca setup --defaults
 ```
 
-**`orca setup`** is an interactive wizard (similar to [Hermes `hermes setup`](https://github.com/NousResearch/hermes-agent)): port, workspace, bridge token, OpenRouter / OpenAI-compatible API key and model, optional harness paths, optional Telegram bot token (stored in the OS keyring). It can optionally run **`orca install`** and **`orca start`** at the end.
+**`orca setup`** is an interactive wizard (similar to [Hermes `hermes setup`](https://github.com/NousResearch/hermes-agent)): port, workspace, bridge token, provider/model setup (OpenRouter, OpenAI, Anthropic, xAI, Z.AI GLM, Mistral, GitHub Copilot, Google Vertex, Azure OpenAI, Ollama, Hermes Gateway, or custom OpenAI-compatible), optional harness paths, and optional Telegram bot token (stored in the OS keyring). It can optionally run **`orca install`** and **`orca start`** at the end.
 
 `orca install` generates a **bridge token** if missing, stores it in the OS keyring and `~/.orca/config.toml`, and registers the platform daemon.
 
@@ -87,13 +87,13 @@ token = "<from orca install>"
 # node_path = "/usr/local/bin/node"
 
 [llm]
-# Optional — for headless orchestrator (OpenRouter by default)
-api_key = "sk-or-..."
-base_url = "https://openrouter.ai/api/v1"
-model = "openai/gpt-4o-mini"
+# Optional — headless orchestrator defaults (provider/model chosen in setup)
+api_key = "sk-..."
+base_url = "https://api.z.ai/api/coding/paas/v4"
+model = "GLM-4.7"
 ```
 
-Environment overrides: `PORT`, `CANVAS_BRIDGE_TOKEN`, `WORKSPACE_ROOT`, `OPENROUTER_API_KEY`, `ORCA_MODEL`, `ORCA_HARNESS_SCRIPT`, `ORCAD_PATH`.
+Environment overrides: `PORT`, `CANVAS_BRIDGE_TOKEN`, `WORKSPACE_ROOT`, `ORCA_API_KEY`, `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY`, `ZAI_API_KEY`, `GLM_API_KEY`, `MISTRAL_API_KEY`, `GITHUB_TOKEN`, `ORCA_LLM_BASE_URL`, `ORCA_MODEL`, `ORCA_HARNESS_SCRIPT`, `ORCAD_PATH`.
 
 ## CLI
 

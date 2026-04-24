@@ -22,15 +22,31 @@ enum ProviderPreset {
     OpenRouter,
     OpenAi,
     Anthropic,
+    Xai,
+    Zai,
+    Mistral,
+    GithubCopilot,
+    GoogleVertex,
+    AzureOpenAi,
+    Ollama,
+    HermesGateway,
     Custom,
 }
 
 impl ProviderPreset {
     fn label(self) -> &'static str {
         match self {
-            Self::OpenRouter => "OpenRouter (recommended)",
+            Self::OpenRouter => "OpenRouter",
             Self::OpenAi => "OpenAI",
             Self::Anthropic => "Anthropic",
+            Self::Xai => "xAI (Grok)",
+            Self::Zai => "Z.AI (GLM)",
+            Self::Mistral => "Mistral",
+            Self::GithubCopilot => "GitHub Copilot",
+            Self::GoogleVertex => "Google Vertex (OpenAI-compatible)",
+            Self::AzureOpenAi => "Azure OpenAI",
+            Self::Ollama => "Ollama (local)",
+            Self::HermesGateway => "Hermes Gateway",
             Self::Custom => "Custom OpenAI-compatible endpoint",
         }
     }
@@ -40,6 +56,14 @@ impl ProviderPreset {
             Self::OpenRouter => "https://openrouter.ai/api/v1",
             Self::OpenAi => "https://api.openai.com/v1",
             Self::Anthropic => "https://api.anthropic.com/v1",
+            Self::Xai => "https://api.x.ai/v1",
+            Self::Zai => "https://api.z.ai/api/coding/paas/v4",
+            Self::Mistral => "https://api.mistral.ai/v1",
+            Self::GithubCopilot => "https://api.githubcopilot.com",
+            Self::GoogleVertex => "https://aiplatform.googleapis.com/v1beta1/projects/PROJECT/locations/global/endpoints/openapi",
+            Self::AzureOpenAi => "https://YOUR-RESOURCE.openai.azure.com/openai/deployments/YOUR-DEPLOYMENT",
+            Self::Ollama => "http://localhost:11434/v1",
+            Self::HermesGateway => "http://127.0.0.1:8642/v1",
             Self::Custom => "http://localhost:11434/v1",
         }
     }
@@ -49,6 +73,14 @@ impl ProviderPreset {
             Self::OpenRouter => "openai/gpt-4o-mini",
             Self::OpenAi => "gpt-4o-mini",
             Self::Anthropic => "claude-3-5-sonnet-latest",
+            Self::Xai => "grok-4",
+            Self::Zai => "GLM-4.7",
+            Self::Mistral => "mistral-medium-latest",
+            Self::GithubCopilot => "gpt-4.1",
+            Self::GoogleVertex => "google/gemini-2.5-pro",
+            Self::AzureOpenAi => "gpt-4.1",
+            Self::Ollama => "qwen2.5-coder:14b",
+            Self::HermesGateway => "gpt-5.4-mini",
             Self::Custom => "your-model-id",
         }
     }
@@ -62,12 +94,34 @@ impl ProviderPreset {
             Self::Anthropic => {
                 "Anthropic API key (optional now; you can set ANTHROPIC_API_KEY later)"
             }
+            Self::Xai => "xAI API key (optional now; you can set XAI_API_KEY later)",
+            Self::Zai => {
+                "Z.AI API key (optional now; you can set ZAI_API_KEY or GLM_API_KEY later)"
+            }
+            Self::Mistral => "Mistral API key (optional now; you can set MISTRAL_API_KEY later)",
+            Self::GithubCopilot => "GitHub token (optional now; you can set GITHUB_TOKEN later)",
+            Self::GoogleVertex => "Google Vertex bearer token/API key (optional now)",
+            Self::AzureOpenAi => "Azure OpenAI API key (optional now)",
+            Self::Ollama => "API key (optional; usually empty for local Ollama)",
+            Self::HermesGateway => "Hermes API key (optional; often empty for local gateway)",
             Self::Custom => "API key (optional; leave empty if your endpoint does not require one)",
         }
     }
 }
 
-/// Non-interactive: merge `PORT`, `WORKSPACE_ROOT`, `OPENROUTER_API_KEY`, `ORCA_MODEL`, `ORCA_LLM_BASE_URL` into config and save.
+fn first_nonempty_env(keys: &[&str]) -> Option<String> {
+    for key in keys {
+        if let Ok(v) = std::env::var(key) {
+            let t = v.trim();
+            if !t.is_empty() {
+                return Some(t.to_string());
+            }
+        }
+    }
+    None
+}
+
+/// Non-interactive: merge `PORT`, `WORKSPACE_ROOT`, provider API-key envs, `ORCA_MODEL`, `ORCA_LLM_BASE_URL` into config and save.
 pub fn cmd_setup_defaults() -> anyhow::Result<()> {
     let mut cfg = OrcaConfig::load().unwrap_or_default();
 
@@ -81,10 +135,18 @@ pub fn cmd_setup_defaults() -> anyhow::Result<()> {
             cfg.server.workspace = Some(PathBuf::from(w.trim()));
         }
     }
-    if let Ok(k) = std::env::var("OPENROUTER_API_KEY") {
-        if !k.trim().is_empty() {
-            cfg.llm.api_key = Some(k);
-        }
+    if let Some(k) = first_nonempty_env(&[
+        "ORCA_API_KEY",
+        "OPENROUTER_API_KEY",
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+        "XAI_API_KEY",
+        "ZAI_API_KEY",
+        "GLM_API_KEY",
+        "MISTRAL_API_KEY",
+        "GITHUB_TOKEN",
+    ]) {
+        cfg.llm.api_key = Some(k);
     }
     if let Ok(u) = std::env::var("ORCA_LLM_BASE_URL") {
         if !u.trim().is_empty() {
@@ -152,6 +214,14 @@ fn choose_provider(theme: &ColorfulTheme) -> anyhow::Result<ProviderPreset> {
         ProviderPreset::OpenRouter,
         ProviderPreset::OpenAi,
         ProviderPreset::Anthropic,
+        ProviderPreset::Xai,
+        ProviderPreset::Zai,
+        ProviderPreset::Mistral,
+        ProviderPreset::GithubCopilot,
+        ProviderPreset::GoogleVertex,
+        ProviderPreset::AzureOpenAi,
+        ProviderPreset::Ollama,
+        ProviderPreset::HermesGateway,
         ProviderPreset::Custom,
     ];
     let labels: Vec<&str> = providers.iter().map(|p| p.label()).collect();

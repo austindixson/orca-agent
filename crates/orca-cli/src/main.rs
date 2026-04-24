@@ -79,7 +79,7 @@ enum Commands {
     Doctor,
     /// Interactive wizard — model, keys, workspace, daemon (Hermes-style)
     Setup {
-        /// Non-interactive: merge PORT, WORKSPACE_ROOT, OPENROUTER_API_KEY, ORCA_MODEL, ORCA_LLM_BASE_URL
+        /// Non-interactive: merge PORT, WORKSPACE_ROOT, provider API key envs, ORCA_MODEL, ORCA_LLM_BASE_URL
         #[arg(long)]
         defaults: bool,
     },
