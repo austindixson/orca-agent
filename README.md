@@ -44,6 +44,10 @@ ORCA_MODEL='GLM-4.7' \
 orca setup --defaults
 ```
 
+Interactive setup also includes a Z.AI endpoint picker:
+- Coding Plan endpoint: `https://api.z.ai/api/coding/paas/v4`
+- Standard endpoint: `https://api.z.ai/api/paas/v4`
+
 Daily commands:
 
 ```bash

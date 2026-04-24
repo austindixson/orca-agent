@@ -209,6 +209,9 @@ fn choose_setup_mode(theme: &ColorfulTheme, is_existing: bool) -> anyhow::Result
     })
 }
 
+const ZAI_CODING_PLAN_BASE: &str = "https://api.z.ai/api/coding/paas/v4";
+const ZAI_STANDARD_BASE: &str = "https://api.z.ai/api/paas/v4";
+
 fn choose_provider(theme: &ColorfulTheme) -> anyhow::Result<ProviderPreset> {
     let providers = [
         ProviderPreset::OpenRouter,
@@ -231,6 +234,36 @@ fn choose_provider(theme: &ColorfulTheme) -> anyhow::Result<ProviderPreset> {
         .default(0)
         .interact()?;
     Ok(providers[idx])
+}
+
+fn choose_zai_endpoint(theme: &ColorfulTheme, current: Option<&str>) -> anyhow::Result<String> {
+    let choices = [
+        "Coding Plan endpoint (recommended for GLM-4.5/4.6/4.7/5/5.1)",
+        "Standard endpoint (regular Z.AI API)",
+    ];
+
+    let current_norm = current
+        .unwrap_or_default()
+        .trim()
+        .trim_end_matches('/')
+        .to_lowercase();
+    let default_idx = if current_norm == ZAI_STANDARD_BASE.to_lowercase() {
+        1
+    } else {
+        0
+    };
+
+    let idx = Select::with_theme(theme)
+        .with_prompt("Choose your Z.AI endpoint")
+        .items(&choices)
+        .default(default_idx)
+        .interact()?;
+
+    Ok(if idx == 1 {
+        ZAI_STANDARD_BASE.to_string()
+    } else {
+        ZAI_CODING_PLAN_BASE.to_string()
+    })
 }
 
 fn setup_provider_and_model(theme: &ColorfulTheme, cfg: &mut OrcaConfig) -> anyhow::Result<()> {
@@ -258,14 +291,18 @@ fn setup_provider_and_model(theme: &ColorfulTheme, cfg: &mut OrcaConfig) -> anyh
         cfg.llm.api_key = Some(api_key.trim().to_string());
     }
 
+    let base_url_default = if matches!(provider, ProviderPreset::Zai) {
+        choose_zai_endpoint(theme, cfg.llm.base_url.as_deref())?
+    } else {
+        cfg.llm
+            .base_url
+            .clone()
+            .unwrap_or_else(|| provider.default_base_url().to_string())
+    };
+
     let base_url: String = Input::with_theme(theme)
         .with_prompt("OpenAI-compatible base URL")
-        .default(
-            cfg.llm
-                .base_url
-                .clone()
-                .unwrap_or_else(|| provider.default_base_url().to_string()),
-        )
+        .default(base_url_default)
         .interact_text()?;
 
     if !base_url.trim().is_empty() {
